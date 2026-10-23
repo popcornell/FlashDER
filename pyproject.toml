@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flashder"
+version = "0.1.0"
+description = "Fast, exact diarization error rate (DER) and Jaccard error rate (JER), md-eval / dscore / pyannote compatible"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Samuele Cornell" }]
+keywords = ["speaker diarization", "DER", "JER", "evaluation", "md-eval", "rttm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy>=1.22", "scipy>=1.7"]
+
+[project.urls]
+Homepage = "https://github.com/popcornell/FastDER"
+Repository = "https://github.com/popcornell/FastDER"
+
+[project.optional-dependencies]
+torch = ["torch>=2.0"]
+test = ["pytest>=7", "pyannote.metrics>=3.2", "intervaltree>=3.0", "tabulate"]
+
+[project.scripts]
+flashder = "flashder.cli:main"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/flashder", "tests/*.py", "examples", "docs", "README.md", "LICENSE", "CITATION.cff", "pyproject.toml"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/flashder"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::UserWarning:pyannote.*"]
+
+[tool.ruff]
+line-length = 120

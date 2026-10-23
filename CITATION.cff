@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "flashder: fast and exact diarization error rate and Jaccard error rate"
+type: software
+authors:
+  - family-names: Cornell
+    given-names: Samuele
+version: 0.1.0
+date-released: 2026-10-23
+license: MIT
+repository-code: "https://github.com/popcornell/FastDER"
+keywords:
+  - speaker diarization
+  - diarization error rate
+  - Jaccard error rate
+  - evaluation
