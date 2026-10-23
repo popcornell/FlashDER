@@ -140,7 +140,7 @@ recording 2   no reference    hyp y [0, 5]    uem [0, 5]
 
 pyannote.metrics adds 5 s of false alarm to 10 s of reference speech. md-eval and dscore drop the hypothesis of recording 2, and the 5 s of false alarm are not counted, which is the same omission as in point 2. Speech that the system assigns to a recording in which the reference has none is an error of the system, and whether the recording is to be scored at all is stated by the UEM. FlashDER counts this speech as false alarm.
 
-The JER of a recording is the mean of the Jaccard error over its reference speakers and is undefined when there are none. The `JaccardErrorRate` of pyannote.metrics raises `ZeroDivisionError` on recording 2. FlashDER reports a JER of 100 percent for such a recording. The overall JER is the mean over all reference speakers in the data set, to which the recording contributes no speaker, as in dscore.
+The JER of a recording is the mean of the Jaccard error over its reference speakers and is undefined when there are none. The `JaccardErrorRate` of pyannote.metrics 4.0.0 raises `ZeroDivisionError` on recording 2, and version 4.2.0 reports 100 percent. FlashDER reports a JER of 100 percent for such a recording. The overall JER is the mean over all reference speakers in the data set, to which the recording contributes no speaker, as in dscore.
 
 ## 7. Speaker mapping for JER
 

@@ -34,10 +34,14 @@ class Style:
         Where the optimal speaker mapping is computed: ``"uem"`` = whole UEM,
         ignoring collars and overlap exclusion (md-eval), ``"scored"`` = only
         the scored region (pyannote).
-    trim_and_merge
-        Crop turns to the UEM and merge overlapping turns of the same speaker
-        *before* computing collars (dscore). Turns cut by the UEM then get a
-        collar at the cut point.
+    trim_to_uem
+        Crop turns to the UEM *before* computing collars (dscore). A turn cut
+        by the UEM then gets a collar at the cut point, since the annotation
+        beyond the UEM is unknown.
+    merge_turns
+        Merge turns of the same speaker before scoring: ``"no"`` (md-eval,
+        pyannote), ``"overlapping"`` (dscore) or ``"touching"``, which also
+        joins turns that end and start at the same time.
     jer_mapping
         ``"jaccard"`` minimises the per-speaker JER (dscore); ``"overlap"``
         maximises the overlap duration (pyannote).
@@ -47,22 +51,42 @@ class Style:
     jer_resolution
         Frame size used for JER when no explicit ``resolution`` is requested.
         dscore computes DER exactly (through md-eval) but JER on 10 ms frames.
+    count_files_without_ref
+        Include recordings absent from the reference in the overall DER, as
+        false alarm (pyannote). md-eval, and so dscore, ignore them.
     """
 
     name: str
     default_uem: Literal["ref", "union"] = "ref"
     mapping_region: Literal["uem", "scored"] = "uem"
-    trim_and_merge: bool = False
+    trim_to_uem: bool = False
+    merge_turns: Literal["no", "overlapping", "touching"] = "no"
     jer_mapping: Literal["jaccard", "overlap"] = "jaccard"
     jer_region: Literal["uem", "scored"] = "uem"
     jer_resolution: float | None = None
+    count_files_without_ref: bool = False
 
 
 STYLES = {
     "md-eval": Style("md-eval"),
-    "dscore": Style("dscore", default_uem="union", trim_and_merge=True, jer_resolution=0.01),
+    "dscore": Style("dscore", default_uem="union", trim_to_uem=True, merge_turns="overlapping", jer_resolution=0.01),
     "pyannote": Style(
-        "pyannote", default_uem="union", mapping_region="scored", jer_mapping="overlap", jer_region="scored"
+        "pyannote",
+        default_uem="union",
+        mapping_region="scored",
+        jer_mapping="overlap",
+        jer_region="scored",
+        count_files_without_ref=True,
+    ),
+    # FlashDER's own conventions (the default), see docs/conventions.md
+    "flashder": Style(
+        "flashder",
+        default_uem="union",
+        mapping_region="scored",
+        merge_turns="touching",
+        jer_mapping="jaccard",
+        jer_region="scored",
+        count_files_without_ref=True,
     ),
 }
 
@@ -310,7 +334,7 @@ def score_file(
     *,
     collar: float = 0.0,
     skip_overlap: bool = False,
-    style="md-eval",
+    style="flashder",
     resolution: float | None = None,
     jer: bool = True,
     jer_min_ref_dur: float = 0.0,
@@ -322,9 +346,11 @@ def score_file(
     if uem is None:
         uem = union_extent(ref, hyp) if st.default_uem == "union" else union_extent(ref)
     uem = as_uem(uem)
-    if st.trim_and_merge:
-        ref = ref.crop(uem).merge_overlaps()
-        hyp = hyp.crop(uem).merge_overlaps()
+    if st.trim_to_uem:
+        ref, hyp = ref.crop(uem), hyp.crop(uem)
+    if st.merge_turns != "no":
+        strict = st.merge_turns == "overlapping"
+        ref, hyp = ref.merge_overlaps(strict=strict), hyp.merge_overlaps(strict=strict)
 
     grid = build_grid(ref, hyp, uem, collar=collar, resolution=resolution, keep_turn_counts=count_overlapping_turns)
     der = der_from_grid(

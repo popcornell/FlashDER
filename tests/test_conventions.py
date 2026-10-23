@@ -28,7 +28,7 @@ EXAMPLES = {
         {"r": [[0, 10]]},
         0.25,
         False,
-        {"md-eval": (0.0, None), "dscore": (0.0, 2.0), "pyannote": (0.0, 0.0)},
+        {"md-eval": (0.0, None), "dscore": (0.0, 2.0), "pyannote": (0.0, 0.0), "flashder": (0.0, 0.0)},
     ),
     "2-default-uem": (
         {"r": S((0, 10, "A"))},
@@ -36,7 +36,7 @@ EXAMPLES = {
         None,
         0.0,
         False,
-        {"md-eval": (0.0, None), "dscore": (20.0, 16.67), "pyannote": (20.0, 16.67)},
+        {"md-eval": (0.0, None), "dscore": (20.0, 16.67), "pyannote": (20.0, 16.67), "flashder": (20.0, 16.67)},
     ),
     "3-mapping-region": (
         {"r": S((0, 1, "A"), (2, 3, "A"), (4, 5, "A"), (6, 7, "A"), (8, 10, "B"))},
@@ -44,7 +44,7 @@ EXAMPLES = {
         {"r": [[0, 10]]},
         0.5,
         False,
-        {"md-eval": (100.0, None), "dscore": (100.0, 66.67), "pyannote": (0.0, 0.0)},
+        {"md-eval": (100.0, None), "dscore": (100.0, 66.67), "pyannote": (0.0, 0.0), "flashder": (0.0, 0.0)},
     ),
     "4-uem-cut": (
         {"r": S((0, 10, "A"))},
@@ -52,7 +52,7 @@ EXAMPLES = {
         {"r": [[0, 5]]},
         0.25,
         False,
-        {"md-eval": (4.21, None), "dscore": (0.0, 4.0), "pyannote": (4.21, 4.21)},
+        {"md-eval": (4.21, None), "dscore": (0.0, 4.0), "pyannote": (4.21, 4.21), "flashder": (4.21, 4.21)},
     ),
     "5-same-speaker-overlap": (
         {"r": S((0, 2, "A"), (1, 3, "A"))},
@@ -60,7 +60,7 @@ EXAMPLES = {
         {"r": [[0, 3]]},
         0.0,
         False,
-        {"md-eval": (16.67, None), "dscore": (16.67, 16.67), "pyannote-count": (37.5, 16.67)},
+        {"md-eval": (16.67, None), "dscore": (16.67, 16.67), "pyannote-count": (37.5, 16.67), "flashder": (16.67, 16.67)},
     ),
     "5-same-speaker-overlap-excluded": (
         {"r": S((0, 2, "A"), (1, 3, "A"))},
@@ -68,7 +68,7 @@ EXAMPLES = {
         {"r": [[0, 3]]},
         0.0,
         True,
-        {"md-eval": (25.0, None), "dscore": (16.67, 16.67), "pyannote-count": (25.0, 25.0)},
+        {"md-eval": (25.0, None), "dscore": (16.67, 16.67), "pyannote-count": (25.0, 25.0), "flashder": (16.67, 16.67)},
     ),
     "6-recording-without-reference": (
         {"r1": S((0, 10, "A"))},
@@ -76,7 +76,7 @@ EXAMPLES = {
         {"r1": [[0, 10]], "r2": [[0, 5]]},
         0.0,
         False,
-        {"md-eval": (0.0, None), "dscore": (0.0, 0.0), "pyannote": (50.0, None)},
+        {"md-eval": (0.0, None), "dscore": (0.0, 0.0), "pyannote": (50.0, None), "flashder": (50.0, 0.0)},
     ),
     "7-jer-mapping": (
         {"r": S((0, 1, "A"), (0, 3, "B"))},
@@ -84,7 +84,7 @@ EXAMPLES = {
         {"r": [[0, 8]]},
         0.0,
         False,
-        {"md-eval": (175.0, None), "dscore": (175.0, 77.08), "pyannote": (175.0, 81.25)},
+        {"md-eval": (175.0, None), "dscore": (175.0, 77.08), "pyannote": (175.0, 81.25), "flashder": (175.0, 77.08)},
     ),
     "8-jer-frames": (
         {"r": S((0, 1.004, "A"))},
@@ -92,7 +92,15 @@ EXAMPLES = {
         {"r": [[0, 2]]},
         0.0,
         False,
-        {"md-eval": (0.4, None), "dscore": (0.4, 0.99), "pyannote": (0.4, 0.4)},
+        {"md-eval": (0.4, None), "dscore": (0.4, 0.99), "pyannote": (0.4, 0.4), "flashder": (0.4, 0.4)},
+    ),
+    "5-touching-turns": (  # point 5: splitting a turn leaves the score unchanged
+        {"r": S((0, 2, "A"), (2, 4, "A"))},
+        {"r": S((0, 1.9, "x"), (2.1, 4, "x"))},
+        {"r": [[0, 4]]},
+        0.25,
+        False,
+        {"md-eval": (0.0, None), "dscore": (0.0, 5.0), "pyannote": (0.0, 0.0), "flashder": (5.71, 5.71)},
     ),
 }
 
@@ -197,8 +205,11 @@ def test_pyannote_values(name):
             if jer is not None:
                 j(r, h, uem=tl)
             elif f not in ref:
-                with pytest.raises(ZeroDivisionError):
-                    j(r, h, uem=tl)
+                # pyannote.metrics 4.0 raises, later versions report 100 percent
+                try:
+                    assert j(r, h, uem=tl) == pytest.approx(1.0)
+                except ZeroDivisionError:
+                    pass
     assert 100 * abs(m) == pytest.approx(der, abs=5e-3)
     if jer is not None:
         assert 100 * abs(j) == pytest.approx(jer, abs=5e-3)

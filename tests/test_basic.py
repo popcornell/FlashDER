@@ -91,8 +91,12 @@ def test_jer_unmapped_speaker():
 def test_multi_file_files_without_reference():
     ref = {"a": S((0, 10, "A"))}
     hyp = {"a": S((0, 10, "x")), "b": S((0, 5, "y"))}
-    assert score(ref, hyp).der == 0  # md-eval ignores files absent from the reference
+    assert score(ref, hyp, style="md-eval").der == 0  # md-eval ignores files absent from the reference
     assert score(ref, hyp, style="pyannote").total.false_alarm == pytest.approx(5)
+    rep = score(ref, hyp)  # FlashDER counts their speech as false alarm
+    assert rep.total.false_alarm == pytest.approx(5)
+    assert rep.files["b"].der == 1.0
+    assert rep.jer_files["b"].jer == 1.0  # JER undefined without reference speakers, reported as 100 percent
 
 
 def test_resolution_frames_close_to_exact(rng):

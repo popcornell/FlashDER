@@ -87,7 +87,8 @@ def timeit(fn, repeat):
 
 
 def bench_flashder(ref, hyp, uem, collar, skip, jer):
-    rep = flashder.score(ref, hyp, uem, collar=collar, skip_overlap=skip, jer=jer)
+    # md-eval conventions, so that the values can be compared with the other tools
+    rep = flashder.score(ref, hyp, uem, collar=collar, skip_overlap=skip, style="md-eval", jer=jer)
     return rep.der, rep.jer
 
 
@@ -165,7 +166,8 @@ def run_dscore(dscore, td, collar, skip):
 def run_flashder_cli(td, collar, skip, jer):
     exe = shutil.which("flashder") or sys.executable
     cmd = [exe] if exe != sys.executable else [exe, "-m", "flashder.cli"]
-    cmd += ["-r", f"{td}/ref.rttm", "-s", f"{td}/hyp.rttm", "-u", f"{td}/all.uem", "-c", str(collar), "--json"]
+    cmd += ["-r", f"{td}/ref.rttm", "-s", f"{td}/hyp.rttm", "-u", f"{td}/all.uem", "-c", str(collar)]
+    cmd += ["--style", "md-eval", "--json"]
     cmd += (["-1"] if skip else []) + ([] if jer else ["--no-jer"])
     out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
     import json
