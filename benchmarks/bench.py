@@ -222,13 +222,13 @@ def main():
                 )
             if "spyder" not in args.skip and not jer:
                 results["spyder"] = timeit(lambda: bench_spyder(prepared["spyder"], c, sk, jer), args.repeat)
-            if "simpleder" not in args.skip and not jer and ename == "der":
+            if "simpleder" not in args.skip and not jer:
                 results["simpleder"] = timeit(lambda: bench_simpleder(prepared["simpleder"], c, sk, jer), 1)
             # whole-process timings
             results["flashder CLI (process)"] = timeit(lambda: run_flashder_cli(td, c, sk, jer), 1)
             if mdeval and not jer:
                 results["md-eval-22.pl (process)"] = timeit(lambda: run_mdeval(mdeval, td, c, sk), 1)
-            if args.dscore_dir and (jer or ename == "der-c-1") and "dscore" not in args.skip:
+            if args.dscore_dir and "dscore" not in args.skip:  # always computes DER and JER together
                 results["dscore (process)"] = timeit(lambda: run_dscore(args.dscore_dir, td, c, sk), 1)
 
             base = results["flashder"][0]

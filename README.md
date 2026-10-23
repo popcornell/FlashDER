@@ -144,43 +144,45 @@ The PyTorch backend is compared with the numpy implementation on CPU and, when a
 
 ## Speed
 
-Time to score two synthetic data sets on an Apple M5 (Python 3.13, numpy 2.3, scipy 1.16, Perl 5.34). Library timings exclude file reading. md-eval and dscore can only be run as scripts, so they are timed as whole processes; the FlashDER command line is timed in the same way for comparison. All tools that compute DER report the same value, except pyannote.metrics, which counts overlapping turns of the same hypothesis speaker more than once (see above).
+Time to score two synthetic data sets on an Apple M5 (Python 3.13, numpy 2.3, scipy 1.16, Perl 5.34). Library timings exclude file reading. md-eval and dscore can only be run as scripts, so they are timed as whole processes; the FlashDER command line is timed in the same way for comparison. All tools report the same DER, with two exceptions. pyannote.metrics counts overlapping turns of the same hypothesis speaker more than once (see above). simpleder scores one recording at a time and has no UEM; the benchmark averages its per-recording values weighted by reference duration, which differs slightly from the other tools when a collar is used.
 
 500 recordings of 5 minutes, 2 to 4 speakers, 39,139 reference turns:
 
 | tool | DER | DER, collar 0.25 s, overlap excluded | DER and JER |
 |---|---|---|---|
-| FlashDER | 48 ms | 69 ms | 61 ms |
-| [spyder][spyder] 0.4.1 | 83 ms | 85 ms | |
-| [simpleder][simpleder] 0.0.8 | 899 ms | | |
-| [pyannote.metrics][pyannote] 4.0.0 | 3.66 s | 3.06 s | 4.74 s |
-| FlashDER command line | 0.28 s | 0.29 s | 0.29 s |
-| [md-eval-22.pl][md-eval] | 1.32 s | 1.37 s | |
-| [dscore][dscore] | | 3.74 s | 3.62 s |
+| FlashDER | 48 ms | 69 ms | 65 ms |
+| [spyder][spyder] 0.4.1 | 83 ms | 85 ms | no JER |
+| [simpleder][simpleder] 0.0.8 | 889 ms | 688 ms | no JER |
+| [pyannote.metrics][pyannote] 4.0.0 | 4.06 s | 3.13 s | 4.93 s |
+| FlashDER command line | 0.29 s | 0.29 s | 0.31 s |
+| [md-eval-22.pl][md-eval] | 1.32 s | 1.37 s | no JER |
+| [dscore][dscore] | 3.73 s (1) | 3.71 s (1) | 3.74 s |
 
 24 recordings of 30 minutes, 4 to 5 speakers, 12,257 reference turns:
 
 | tool | DER | DER, collar 0.25 s, overlap excluded | DER and JER |
 |---|---|---|---|
-| FlashDER | 8.5 ms | 14 ms | 10 ms |
-| spyder 0.4.1 | 27 ms | 28 ms | |
-| simpleder 0.0.8 | 1.54 s | | |
-| pyannote.metrics 4.0.0 | 3.22 s | 2.57 s | 4.02 s |
+| FlashDER | 8.9 ms | 14 ms | 10 ms |
+| spyder 0.4.1 | 27 ms | 28 ms | no JER |
+| simpleder 0.0.8 | 1.51 s | 0.99 s | no JER |
+| pyannote.metrics 4.0.0 | 3.23 s | 2.61 s | 4.02 s |
 | FlashDER command line | 0.21 s | 0.21 s | 0.21 s |
-| md-eval-22.pl | 0.44 s | 0.47 s | |
-| dscore | | 1.28 s | 1.26 s |
+| md-eval-22.pl | 0.44 s | 0.47 s | no JER |
+| dscore | 1.25 s (1) | 1.30 s (1) | 1.27 s |
 
-Empty cells mark evaluations that a tool does not support or that were not run. About 0.16 s of the command-line time is the import of numpy and scipy.
+(1) dscore always computes JER and its clustering metrics together with DER, so these times include them.
+
+About 0.16 s of the command-line time is the import of numpy and scipy.
 
 Frame-level DER on a batch of 64 chunks of 5000 frames with 4 speakers and a 25-frame collar:
 
 | implementation | time |
 |---|---|
-| `flashder.torch`, MPS | 2.3 ms |
-| `flashder.torch`, CPU | 6.9 ms |
-| `flashder.der_frames`, loop over the batch | 16.6 ms |
+| `flashder.torch`, MPS | 3.1 ms |
+| `flashder.torch`, CPU | 7.0 ms |
+| `flashder.der_frames`, loop over the batch | 16.5 ms |
 | spyder, loop over the batch | 14.1 ms |
-| pyannote.metrics, loop over the batch | 557 ms |
+| pyannote.metrics, loop over the batch | 180 ms |
 
 To reproduce:
 
