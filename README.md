@@ -1,6 +1,6 @@
 # FlashDER
 
-FlashDER computes the diarization error rate (DER) and the Jaccard error rate (JER) for speaker diarization. It gives the same results as NIST [`md-eval-22.pl`][md-eval], [dscore][dscore] and [pyannote.metrics][pyannote]. On the benchmarks below, scoring from Python is 45 to 390 times faster than pyannote.metrics, and the command line is 2 to 13 times faster than `md-eval-22.pl` and dscore.
+FlashDER computes the diarization error rate (DER) and the Jaccard error rate (JER) for speaker diarization. It uses one consistent set of scoring conventions and, through the `style` argument, reproduces the results of NIST [`md-eval-22.pl`][md-eval], [dscore][dscore] and [pyannote.metrics][pyannote] (see [Scoring conventions](#scoring-conventions)). On the benchmarks below, scoring from Python is 45 to 390 times faster than pyannote.metrics, and the command line is 2 to 13 times faster than `md-eval-22.pl` and dscore.
 
 Each recording is cut at every reference, hypothesis, UEM and collar boundary. The resulting intervals are the columns of two boolean matrices, one for the reference speakers and one for the hypothesis speakers. Missed speech, false alarm and speaker confusion are then counts over these matrices, weighted by interval duration. The speaker mapping is found with the Hungarian algorithm on the matrix of co-occurrence times. Scoring is exact in continuous time. A fixed frame grid can be used instead, and a [PyTorch][pytorch] implementation scores batches of frame-level activities on CPU or GPU.
 
@@ -31,7 +31,7 @@ rec2             26.19  0.00  2.38  23.81  41.92      10.50
 *** OVERALL ***  26.10  0.00  1.37  24.73  43.09      18.20
 ```
 
-Values are percentages. `Scored(s)` is the scored reference speaker time in seconds. `md-eval-22.pl -c 0.25 -1` reports the same overall DER of 26.10 percent for these files. JER ignores the collar and the overlap exclusion, as in dscore.
+Values are percentages. `Scored(s)` is the scored reference speaker time in seconds. `md-eval-22.pl -c 0.25 -1` reports the same overall DER of 26.10 percent for these files. JER is computed on the same scored region as DER, with the collar and the overlap exclusion applied.
 
 Options:
 
@@ -42,7 +42,7 @@ Options:
 | `-u` | UEM file |
 | `-c` | collar in seconds on each side of every reference boundary |
 | `-1` | exclude regions where the reference has overlapping speech |
-| `--style` | `md-eval` (default), `dscore` or `pyannote` |
+| `--style` | reproduce the conventions of `md-eval`, `dscore` or `pyannote` instead of the FlashDER conventions (see below) |
 | `--average` | `micro` (default) or `macro` |
 | `--resolution` | score on frames of this size in seconds instead of exactly |
 | `--no-jer` | compute DER only |
@@ -97,25 +97,31 @@ Floating-point hypotheses are thresholded at `threshold=0.5`. The collar is give
 
 ## Scoring conventions
 
-The reference tools differ in several details. The `style` argument selects which tool to reproduce. [docs/conventions.md](docs/conventions.md) describes each difference with an example and the value reported by each tool.
+md-eval, dscore and pyannote.metrics make different choices in several details of the scoring, and the same input can receive different scores from each tool. FlashDER makes one choice at each of these points and applies it to both DER and JER. The table lists the choices; [docs/conventions.md](docs/conventions.md) gives for each point an example, the value reported by each tool, the value reported by FlashDER and the reason for the FlashDER choice. The `style` argument (`md-eval`, `dscore` or `pyannote`) reproduces the choices of one tool, for comparison with results published with that tool.
 
-| | `md-eval` (default) | `dscore` | `pyannote` |
-|---|---|---|---|
-| UEM when none is given | extent of the reference | extent of reference and hypothesis | extent of reference and hypothesis |
-| region used for the speaker mapping | whole UEM | whole UEM | scored region only |
-| turns cropped to the UEM and merged before collars are computed | no | yes | no |
-| JER speaker mapping | minimum Jaccard error | minimum Jaccard error | maximum overlap |
-| JER region | UEM | UEM | scored region |
-| JER computed on 10 ms frames | no | yes | no |
-| recordings absent from the reference | ignored | ignored | counted as false alarm |
+| convention | FlashDER (default) | `md-eval` | `dscore` | `pyannote` |
+|---|---|---|---|---|
+| collar | per side | per side | per side | total width |
+| UEM when none is given | extent of reference and hypothesis | extent of the reference | extent of reference and hypothesis | extent of reference and hypothesis |
+| region used for the speaker mapping | scored region | whole UEM | whole UEM | scored region |
+| collar at UEM boundaries | no | no | yes | no |
+| overlapping turns of one speaker | counted once | counted once for errors, twice for overlap | counted once | counted once per turn |
+| recordings absent from the reference | counted as false alarm | ignored | ignored | counted as false alarm |
+| JER speaker mapping | minimum Jaccard error | n.a. | minimum Jaccard error | maximum shared time |
+| JER region | scored region | n.a. | UEM | scored region |
+| JER computed on 10 ms frames | no | n.a. | yes | no |
 
-Further notes:
+The reasons for the FlashDER choices, in short:
 
-- The collar is given in seconds on each side of a reference boundary, as in md-eval (`-c`) and dscore (`--collar`). pyannote.metrics uses the total width, so pyannote `collar=0.5` corresponds to `collar=0.25` here.
-- `skip_overlap=True` excludes regions where two or more reference segments are active. This is md-eval `-1`, dscore `--ignore_overlaps` and pyannote `skip_overlap=True`.
-- `average="micro"` (default) sums durations over all recordings before dividing, which is what md-eval, dscore and pyannote.metrics report. JER is then the mean over all reference speakers in the data set. `average="macro"` is the unweighted mean of per-recording values.
-- A speaker who has several overlapping turns at the same time is counted once, as in md-eval and dscore. pyannote.metrics counts such a speaker once per turn. `count_overlapping_turns=True` reproduces this behaviour.
-- When two speaker mappings have exactly the same co-occurrence time, the tools may choose different ones and report different confusion. This mostly occurs with frame-level input, where durations are integer numbers of frames.
+- The collar is a tolerance on the position of a reference boundary and is stated as the distance from the boundary, in seconds on each side, as in md-eval (`-c`) and dscore (`--collar`). pyannote.metrics uses the total width, so pyannote `collar=0.5` corresponds to `collar=0.25` here.
+- Every instant at which the reference or the hypothesis has speech is scored, so every false alarm is counted. Scoring the extent of the reference alone, as md-eval does, never counts hypothesis speech before the first or after the last reference turn. A recording in which the hypothesis has speech and the reference has none is scored for the same reason. Regions and recordings that are not to be scored are stated with a UEM.
+- The speaker mapping is computed on the scored region, after the collar and the overlap exclusion are applied, so the reported DER is the minimum over mappings of the scored error. A mapping computed on the whole UEM can be far from optimal on the scored region.
+- A UEM boundary is not a speaker boundary, so no collar is placed there.
+- A speaker is active or inactive at each instant and is counted once, for errors and for overlap, in the reference and in the hypothesis. The score does not depend on how the speech of one speaker is split into turns. `skip_overlap=True` excludes regions where two or more distinct reference speakers are active (md-eval `-1`, dscore `--ignore_overlaps`, pyannote `skip_overlap=True`).
+- The JER mapping minimises the sum of the Jaccard errors, as in the DIHARD II definition, and JER is computed on the same scored region as DER, in continuous time. md-eval does not compute JER.
+- Times are scored as given, without rounding to a frame grid or to milliseconds. `resolution` puts both metrics on a common frame grid when frame level scoring is wanted.
+- `average="micro"` (default) sums durations over all recordings before dividing, which is what md-eval, dscore and pyannote.metrics report. JER is then the mean over all reference speakers in the data set. `average="macro"` is the unweighted mean of per recording values.
+- When two speaker mappings have exactly the same shared speech time, the tools may choose different ones and report different confusion. This mostly occurs with frame level input, where durations are integer numbers of frames.
 
 ## File formats
 
@@ -125,14 +131,14 @@ Further notes:
 | [SegLST][seglst] | `.json` | CHiME-7/8 and [MeetEval][meeteval]; uses `session_id`, `start_time`, `end_time`, `speaker` |
 | [STM][stm] | `.stm` | `inter_segment_gap` and `IGNORE_TIME_SEGMENT_IN_SCORING` lines are skipped |
 | lab | `.lab`, `.txt` | `start end speaker` per line ([Audacity labels][audacity]); the file name is the recording identifier |
-| [Kaldi][kaldi] | | `segments` and `utt2spk`, read with `flashder.io.load_kaldi` |
+| [Kaldi][kaldi] | n.a. | `segments` and `utt2spk`, read with `flashder.io.load_kaldi` |
 | UEM | `.uem` | `file channel start end` |
 
 The format is inferred from the extension or, failing that, from the file content. `flashder.io` also writes RTTM, SegLST, STM, lab and UEM files.
 
 ## Agreement with other tools
 
-The test suite compares FlashDER with the reference tools on random data with overlapping speech, several recordings and UEMs with gaps. Each comparison is repeated with and without collar and with and without overlap exclusion.
+The test suite compares FlashDER, with the matching `style`, with the reference tools on random data with overlapping speech, several recordings and UEMs with gaps. Each comparison is repeated with and without collar and with and without overlap exclusion.
 
 | tool | quantities compared | tolerance |
 |---|---|---|
