@@ -209,7 +209,7 @@ If you use FlashDER, please cite it as follows.
   title   = {{FlashDER}: fast and exact diarization error rate and Jaccard error rate},
   year    = {2026},
   version = {0.1.0},
-  url     = {https://github.com/popcornell/FastDER}
+  url     = {https://github.com/popcornell/FlashDER}
 }
 ```
 

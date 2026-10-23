@@ -8,7 +8,7 @@ authors:
 version: 0.1.0
 date-released: 2026-10-23
 license: MIT
-repository-code: "https://github.com/popcornell/FastDER"
+repository-code: "https://github.com/popcornell/FlashDER"
 keywords:
   - speaker diarization
   - diarization error rate
