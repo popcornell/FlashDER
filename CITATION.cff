@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "flashder: fast and exact diarization error rate and Jaccard error rate"
+title: "FlashDER: fast and exact diarization error rate and Jaccard error rate"
 type: software
 authors:
   - family-names: Cornell

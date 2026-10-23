@@ -2,9 +2,9 @@
 
 NIST `md-eval-22.pl`, dscore and pyannote.metrics all compute the diarization error rate (DER), and dscore and pyannote.metrics also compute the Jaccard error rate (JER). They make different choices in several places, and the same input can receive different scores. This document lists each difference with a small example and the value reported by each tool.
 
-The values were obtained with `md-eval-22.pl` (version 22, as distributed with dscore), dscore at commit `e02f949` and pyannote.metrics 4.0.0. Times are in seconds and scores in percent. Every example is reproduced in `tests/test_conventions.py`, which checks the flashder values and, when the tools are installed, the values of the original tools.
+The values were obtained with `md-eval-22.pl` (version 22, as distributed with dscore), dscore at commit `e02f949` and pyannote.metrics 4.0.0. Times are in seconds and scores in percent. Every example is reproduced in `tests/test_conventions.py`, which checks the FlashDER values and, when the tools are installed, the values of the original tools.
 
-flashder reproduces each tool through the `style` argument (`md-eval`, `dscore` or `pyannote`). The default is `md-eval`. md-eval does not compute JER, so in the `md-eval` style flashder computes JER with the dscore definition, but without frames.
+FlashDER reproduces each tool through the `style` argument (`md-eval`, `dscore` or `pyannote`). The default is `md-eval`. md-eval does not compute JER, so in the `md-eval` style FlashDER computes JER with the dscore definition, but without frames.
 
 In the examples, `ref` and `hyp` list turns as `speaker [start, end]`.
 
@@ -25,7 +25,7 @@ uem  [0, 10]
 | pyannote `collar=0.5` | 0.00 |
 | pyannote `collar=0.25` | 0.77 |
 
-With pyannote `collar=0.25` the excluded region around time 0 is [-0.125, 0.125], and [0.125, 0.2] is counted as missed speech. In flashder the collar is always given per side, as in md-eval: `collar=0.25` corresponds to pyannote `collar=0.5`.
+With pyannote `collar=0.25` the excluded region around time 0 is [-0.125, 0.125], and [0.125, 0.2] is counted as missed speech. In FlashDER the collar is always given per side, as in md-eval: `collar=0.25` corresponds to pyannote `collar=0.5`.
 
 ## 2. Default UEM
 
@@ -107,7 +107,7 @@ uem  [0, 3]
 
 Without overlap exclusion, md-eval and dscore score 3 s of reference speech with 0.5 s missed. pyannote.metrics counts A twice in [1, 2], which gives 4 s of reference speech and 1.5 s missed. With overlap exclusion, md-eval and pyannote.metrics treat [1, 2] as overlap and remove it (0.5 / 2). dscore has merged the turns, finds no overlap and scores all 3 s (0.5 / 3).
 
-flashder counts a speaker once in every style. `count_overlapping_turns=True` reproduces the pyannote.metrics value. The overlap region is determined from turns in the `md-eval` and `pyannote` styles and from merged turns in the `dscore` style, as in the original tools.
+FlashDER counts a speaker once in every style. `count_overlapping_turns=True` reproduces the pyannote.metrics value. The overlap region is determined from turns in the `md-eval` and `pyannote` styles and from merged turns in the `dscore` style, as in the original tools.
 
 Hypothesis turns are subject to the same difference: pyannote.metrics counts overlapping turns of one hypothesis speaker more than once. This is the cause of the difference in DER between pyannote.metrics and the other tools in the benchmarks of the README.
 
@@ -126,7 +126,7 @@ recording 2   no reference    hyp y [0, 5]    uem [0, 5]
 | dscore | 0.00 |
 | pyannote.metrics | 50.00 |
 
-pyannote.metrics adds 5 s of false alarm to 10 s of reference speech. Its `JaccardErrorRate` raises `ZeroDivisionError` on recording 2, which has no reference speaker. flashder returns a JER of 100 percent for such a recording and excludes it from the overall JER, as dscore does.
+pyannote.metrics adds 5 s of false alarm to 10 s of reference speech. Its `JaccardErrorRate` raises `ZeroDivisionError` on recording 2, which has no reference speaker. FlashDER returns a JER of 100 percent for such a recording and excludes it from the overall JER, as dscore does.
 
 ## 7. Speaker mapping for JER
 
@@ -165,13 +165,13 @@ uem  [0, 2]
 | dscore | 0.40 | 0.99 |
 | pyannote.metrics | 0.40 | 0.40 |
 
-The exact Jaccard error is 1 - 1/1.004 = 0.40 percent. On the frame grid, A covers 101 frames and x covers 100, which gives 1 - 100/101 = 0.99 percent. flashder uses frames for JER in the `dscore` style only; `jer_resolution=None` forces the exact value.
+The exact Jaccard error is 1 - 1/1.004 = 0.40 percent. On the frame grid, A covers 101 frames and x covers 100, which gives 1 - 100/101 = 0.99 percent. FlashDER uses frames for JER in the `dscore` style only; `jer_resolution=None` forces the exact value.
 
-A further consequence of the frame grid is that a turn shorter than 10 ms may cover no frame. dscore still counts its speaker as a reference speaker, with a Jaccard error of 100 percent unless a hypothesis speaker also covers no frame. flashder reproduces this in the `dscore` style.
+A further consequence of the frame grid is that a turn shorter than 10 ms may cover no frame. dscore still counts its speaker as a reference speaker, with a Jaccard error of 100 percent unless a hypothesis speaker also covers no frame. FlashDER reproduces this in the `dscore` style.
 
 ## 9. Other sources of small differences
 
 - dscore writes the turns it passes to md-eval with three decimals. Times that are not multiples of 1 ms are rounded before scoring.
 - md-eval prints durations with two or three decimals and the DER with two.
 - When two speaker mappings have exactly the same co-occurrence time, each tool chooses one of them in its own way, and the confusion time can differ. This is rare with times in seconds and more frequent with frame-level input, where durations are integer numbers of frames.
-- All three tools report the micro average over recordings: durations are summed over the data set before dividing. JER is averaged over all reference speakers in the data set. flashder also provides the unweighted mean over recordings with `average="macro"`.
+- All three tools report the micro average over recordings: durations are summed over the data set before dividing. JER is averaged over all reference speakers in the data set. FlashDER also provides the unweighted mean over recordings with `average="macro"`.

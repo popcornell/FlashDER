@@ -1,8 +1,8 @@
-# flashder
+# FlashDER
 
-flashder computes the diarization error rate (DER) and the Jaccard error rate (JER) for speaker diarization. It gives the same results as NIST `md-eval-22.pl`, dscore and pyannote.metrics. On the benchmarks below, scoring from Python is 45 to 390 times faster than pyannote.metrics, and the command line is 2 to 13 times faster than `md-eval-22.pl` and dscore.
+FlashDER computes the diarization error rate (DER) and the Jaccard error rate (JER) for speaker diarization. It gives the same results as NIST [`md-eval-22.pl`][md-eval], [dscore][dscore] and [pyannote.metrics][pyannote]. On the benchmarks below, scoring from Python is 45 to 390 times faster than pyannote.metrics, and the command line is 2 to 13 times faster than `md-eval-22.pl` and dscore.
 
-Each recording is cut at every reference, hypothesis, UEM and collar boundary. The resulting intervals are the columns of two boolean matrices, one for the reference speakers and one for the hypothesis speakers. Missed speech, false alarm and speaker confusion are then counts over these matrices, weighted by interval duration. The speaker mapping is found with the Hungarian algorithm on the matrix of co-occurrence times. Scoring is exact in continuous time. A fixed frame grid can be used instead, and a PyTorch implementation scores batches of frame-level activities on CPU or GPU.
+Each recording is cut at every reference, hypothesis, UEM and collar boundary. The resulting intervals are the columns of two boolean matrices, one for the reference speakers and one for the hypothesis speakers. Missed speech, false alarm and speaker confusion are then counts over these matrices, weighted by interval duration. The speaker mapping is found with the Hungarian algorithm on the matrix of co-occurrence times. Scoring is exact in continuous time. A fixed frame grid can be used instead, and a [PyTorch][pytorch] implementation scores batches of frame-level activities on CPU or GPU.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pip install ".[torch]"   # adds the PyTorch backend
 pip install -e ".[test]" # development install with test dependencies
 ```
 
-Python 3.9 or later is required.
+Python 3.9 or later is required. The Python package and the command are named `flashder`.
 
 ## Command line
 
@@ -121,18 +121,18 @@ Further notes:
 
 | format | extension | notes |
 |---|---|---|
-| RTTM | `.rttm` | `SPEAKER` lines; other line types are skipped |
-| SegLST | `.json` | CHiME-7/8 and MeetEval; uses `session_id`, `start_time`, `end_time`, `speaker` |
-| STM | `.stm` | `inter_segment_gap` and `IGNORE_TIME_SEGMENT_IN_SCORING` lines are skipped |
-| lab | `.lab`, `.txt` | `start end speaker` per line (Audacity labels); the file name is the recording identifier |
-| Kaldi | | `segments` and `utt2spk`, read with `flashder.io.load_kaldi` |
+| [RTTM][rttm] | `.rttm` | `SPEAKER` lines; other line types are skipped |
+| [SegLST][seglst] | `.json` | CHiME-7/8 and [MeetEval][meeteval]; uses `session_id`, `start_time`, `end_time`, `speaker` |
+| [STM][stm] | `.stm` | `inter_segment_gap` and `IGNORE_TIME_SEGMENT_IN_SCORING` lines are skipped |
+| lab | `.lab`, `.txt` | `start end speaker` per line ([Audacity labels][audacity]); the file name is the recording identifier |
+| [Kaldi][kaldi] | | `segments` and `utt2spk`, read with `flashder.io.load_kaldi` |
 | UEM | `.uem` | `file channel start end` |
 
 The format is inferred from the extension or, failing that, from the file content. `flashder.io` also writes RTTM, SegLST, STM, lab and UEM files.
 
 ## Agreement with other tools
 
-The test suite compares flashder with the reference tools on random data with overlapping speech, several recordings and UEMs with gaps. Each comparison is repeated with and without collar and with and without overlap exclusion.
+The test suite compares FlashDER with the reference tools on random data with overlapping speech, several recordings and UEMs with gaps. Each comparison is repeated with and without collar and with and without overlap exclusion.
 
 | tool | quantities compared | tolerance |
 |---|---|---|
@@ -144,29 +144,29 @@ The PyTorch backend is compared with the numpy implementation on CPU and, when a
 
 ## Speed
 
-Time to score two synthetic data sets on an Apple M5 (Python 3.13, numpy 2.3, scipy 1.16, Perl 5.34). Library timings exclude file reading. md-eval and dscore can only be run as scripts, so they are timed as whole processes; the flashder command line is timed in the same way for comparison. All tools that compute DER report the same value, except pyannote.metrics, which counts overlapping turns of the same hypothesis speaker more than once (see above).
+Time to score two synthetic data sets on an Apple M5 (Python 3.13, numpy 2.3, scipy 1.16, Perl 5.34). Library timings exclude file reading. md-eval and dscore can only be run as scripts, so they are timed as whole processes; the FlashDER command line is timed in the same way for comparison. All tools that compute DER report the same value, except pyannote.metrics, which counts overlapping turns of the same hypothesis speaker more than once (see above).
 
 500 recordings of 5 minutes, 2 to 4 speakers, 39,139 reference turns:
 
 | tool | DER | DER, collar 0.25 s, overlap excluded | DER and JER |
 |---|---|---|---|
-| flashder | 48 ms | 69 ms | 61 ms |
-| spyder 0.4.1 | 83 ms | 85 ms | |
-| simpleder 0.0.8 | 899 ms | | |
-| pyannote.metrics 4.0.0 | 3.66 s | 3.06 s | 4.74 s |
-| flashder command line | 0.28 s | 0.29 s | 0.29 s |
-| md-eval-22.pl | 1.32 s | 1.37 s | |
-| dscore | | 3.74 s | 3.62 s |
+| FlashDER | 48 ms | 69 ms | 61 ms |
+| [spyder][spyder] 0.4.1 | 83 ms | 85 ms | |
+| [simpleder][simpleder] 0.0.8 | 899 ms | | |
+| [pyannote.metrics][pyannote] 4.0.0 | 3.66 s | 3.06 s | 4.74 s |
+| FlashDER command line | 0.28 s | 0.29 s | 0.29 s |
+| [md-eval-22.pl][md-eval] | 1.32 s | 1.37 s | |
+| [dscore][dscore] | | 3.74 s | 3.62 s |
 
 24 recordings of 30 minutes, 4 to 5 speakers, 12,257 reference turns:
 
 | tool | DER | DER, collar 0.25 s, overlap excluded | DER and JER |
 |---|---|---|---|
-| flashder | 8.5 ms | 14 ms | 10 ms |
+| FlashDER | 8.5 ms | 14 ms | 10 ms |
 | spyder 0.4.1 | 27 ms | 28 ms | |
 | simpleder 0.0.8 | 1.54 s | | |
 | pyannote.metrics 4.0.0 | 3.22 s | 2.57 s | 4.02 s |
-| flashder command line | 0.21 s | 0.21 s | 0.21 s |
+| FlashDER command line | 0.21 s | 0.21 s | 0.21 s |
 | md-eval-22.pl | 0.44 s | 0.47 s | |
 | dscore | | 1.28 s | 1.26 s |
 
@@ -201,28 +201,45 @@ The comparisons with md-eval and dscore clone dscore, which includes `md-eval-22
 
 ## Citation
 
-If you use flashder, please cite it as follows.
+If you use FlashDER, please cite it as follows.
 
 ```bibtex
 @software{cornell2026flashder,
   author  = {Cornell, Samuele},
-  title   = {flashder: fast and exact diarization error rate and Jaccard error rate},
+  title   = {{FlashDER}: fast and exact diarization error rate and Jaccard error rate},
   year    = {2026},
   version = {0.1.0},
   url     = {https://github.com/popcornell/FastDER}
 }
 ```
 
-The metadata is also in `CITATION.cff`. The metrics themselves are defined in the NIST Rich Transcription evaluation plans (DER) and in the DIHARD II evaluation plan (JER).
+The metadata is also in `CITATION.cff`. DER is defined in the [NIST RT-09 evaluation plan][rt09], and JER in the [DIHARD II challenge][dihard2] ([Ryant et al., 2019][dihard2-paper]).
 
 ## Related tools
 
-- [md-eval-22.pl](https://github.com/nryant/dscore/blob/master/scorelib/md-eval-22.pl), NIST
-- [dscore](https://github.com/nryant/dscore)
-- [pyannote.metrics](https://github.com/pyannote/pyannote-metrics)
-- [spyder](https://github.com/desh2608/spyder)
-- [MeetEval](https://github.com/fgnt/meeteval)
+- [md-eval-22.pl][md-eval]: NIST scoring script, distributed with dscore
+- [dscore][dscore]: DIHARD scoring tool (DER through md-eval, JER and clustering metrics)
+- [pyannote.metrics][pyannote]: evaluation metrics of the pyannote toolkit
+- [spyder][spyder]: DER in C++ with Python bindings
+- [simpleder][simpleder]: DER in Python
+- [MeetEval][meeteval]: meeting transcription evaluation, with DER through md-eval and dscore
 
 ## License
 
 MIT
+
+[md-eval]: https://github.com/nryant/dscore/blob/master/scorelib/md-eval-22.pl
+[dscore]: https://github.com/nryant/dscore
+[pyannote]: https://github.com/pyannote/pyannote-metrics
+[spyder]: https://github.com/desh2608/spyder
+[simpleder]: https://github.com/wq2012/SimpleDER
+[meeteval]: https://github.com/fgnt/meeteval
+[pytorch]: https://pytorch.org
+[rttm]: https://web.archive.org/web/20100606041157if_/http://www.itl.nist.gov/iad/mig/tests/rt/2009/docs/rt09-meeting-eval-plan-v2.pdf
+[rt09]: https://web.archive.org/web/20100606041157if_/http://www.itl.nist.gov/iad/mig/tests/rt/2009/docs/rt09-meeting-eval-plan-v2.pdf
+[seglst]: https://github.com/fgnt/meeteval#segment-wise-long-form-speech-transcription-annotation-seglst
+[stm]: https://github.com/usnistgov/SCTK/blob/master/doc/infmts.htm#stm_fmt_name_0
+[audacity]: https://manual.audacityteam.org/man/importing_and_exporting_labels.html
+[kaldi]: https://kaldi-asr.org/doc/data_prep.html
+[dihard2]: https://dihardchallenge.github.io/dihard2/
+[dihard2-paper]: https://arxiv.org/abs/1906.07839
