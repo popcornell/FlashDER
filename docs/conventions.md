@@ -6,7 +6,7 @@ The values were obtained with `md-eval-22.pl` (version 22, as distributed with d
 
 The `style` argument (`md-eval`, `dscore` or `pyannote`) reproduces the choices of one tool, for comparison with results published with that tool. Without `style`, FlashDER uses the conventions described here, and the FlashDER rows of the tables below give the values it reports in that case.
 
-In the examples, `ref` and `hyp` list turns as `speaker [start, end]`.
+In the examples, `ref` and `hyp` list turns as `speaker [start, end]`. md-eval does not compute JER, and its JER cells are marked n.a.
 
 ## 1. Collar width
 
@@ -40,7 +40,7 @@ no UEM
 
 | tool | DER | JER |
 |---|---|---|
-| md-eval | 0.00 | |
+| md-eval | 0.00 | n.a. |
 | dscore | 20.00 | 16.67 |
 | pyannote.metrics | 20.00 | 16.67 |
 | FlashDER | 20.00 | 16.67 |
@@ -61,7 +61,7 @@ collar 0.5 s per side
 
 | tool | DER | JER |
 |---|---|---|
-| md-eval `-c 0.5` | 100.00 | |
+| md-eval `-c 0.5` | 100.00 | n.a. |
 | dscore `--collar 0.5` | 100.00 | 66.67 |
 | pyannote `collar=1.0` | 0.00 | 0.00 |
 | FlashDER `collar=0.5` | 0.00 | 0.00 |
@@ -178,7 +178,7 @@ uem  [0, 2]
 
 | tool | DER | JER |
 |---|---|---|
-| md-eval | 0.40 | |
+| md-eval | 0.40 | n.a. |
 | dscore | 0.40 | 0.99 |
 | pyannote.metrics | 0.40 | 0.40 |
 | FlashDER | 0.40 | 0.40 |
