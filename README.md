@@ -25,10 +25,10 @@ flashder -r examples/ref.rttm -s examples/sys.rttm -u examples/all.uem -c 0.25 -
 ```
 File               DER  Miss    FA   Conf    JER  Scored(s)
 -----------------------------------------------------------
-rec1             25.97  0.00  0.00  25.97  44.26       7.70
-rec2             26.19  0.00  2.38  23.81  41.92      10.50
+rec1             25.97  0.00  0.00  25.97  41.77       7.70
+rec2             26.19  0.00  2.38  23.81  40.58      10.50
 -----------------------------------------------------------
-*** OVERALL ***  26.10  0.00  1.37  24.73  43.09      18.20
+*** OVERALL ***  26.10  0.00  1.37  24.73  41.18      18.20
 ```
 
 Values are percentages. `Scored(s)` is the scored reference speaker time in seconds. `md-eval-22.pl -c 0.25 -1` reports the same overall DER of 26.10 percent for these files. JER is computed on the same scored region as DER, with the collar and the overlap exclusion applied.

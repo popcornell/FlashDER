@@ -30,7 +30,9 @@ def main(argv=None) -> int:
     p.add_argument("--sys-format", choices=["rttm", "seglst", "stm", "lab"], help="default: from extension")
     p.add_argument("-c", "--collar", type=float, default=0.0, help="collar in seconds on EACH side (md-eval -c)")
     p.add_argument("-1", "--skip-overlap", "--ignore-overlaps", action="store_true", help="exclude reference overlap")
-    p.add_argument("--style", choices=sorted(STYLES), default="md-eval", help="conventions to reproduce")
+    p.add_argument(
+        "--style", choices=sorted(STYLES), default="flashder", help="scoring conventions (default: flashder)"
+    )
     p.add_argument("--resolution", type=float, help="score on frames of this size (s) instead of exactly")
     p.add_argument("--no-jer", action="store_true", help="skip JER")
     p.add_argument("--jer-min-ref-dur", type=float, default=0.0)

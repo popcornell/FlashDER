@@ -87,7 +87,9 @@ def test_md_eval(mdeval, tmp_path, seed, collar, skip_overlap, use_uem):
     cmd += ["-1"] if skip_overlap else []
     out = subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
 
-    rep = score(ref, hyp, uem if use_uem else None, collar=collar, skip_overlap=skip_overlap, jer=False)
+    rep = score(
+        ref, hyp, uem if use_uem else None, collar=collar, skip_overlap=skip_overlap, style="md-eval", jer=False
+    )
     # md-eval prints times with 2-3 decimals and DER with 2
     assert rep.total.total == pytest.approx(_mdeval_number(out, "SCORED SPEAKER TIME"), abs=6e-3)
     assert rep.total.miss == pytest.approx(_mdeval_number(out, "MISSED SPEAKER TIME"), abs=6e-3)

@@ -148,7 +148,7 @@ def score(
     *,
     collar: float = 0.0,
     skip_overlap: bool = False,
-    style: str = "md-eval",
+    style: str = "flashder",
     resolution: float | None = None,
     jer: bool = True,
     jer_min_ref_dur: float = 0.0,
@@ -175,8 +175,9 @@ def score(
         Exclude regions where the reference has overlapping segments
         (md-eval ``-1``, dscore ``--ignore_overlaps``).
     style
-        ``"md-eval"`` (default), ``"dscore"`` or ``"pyannote"``: which tool's
-        conventions to reproduce, see :class:`flashder.metrics.Style`.
+        ``"flashder"`` (default) uses the FlashDER conventions;
+        ``"md-eval"``, ``"dscore"`` or ``"pyannote"`` reproduce that tool. See
+        :class:`flashder.metrics.Style` and ``docs/conventions.md``.
     resolution
         ``None`` (default) scores exactly in continuous time. A frame size in
         seconds (e.g. ``0.01``) discretises like dscore does for JER.
@@ -230,7 +231,7 @@ def score(
         report.files[fid] = d
         # md-eval (and so dscore) silently ignores recordings absent from the
         # reference; pyannote counts their speech as false alarm
-        if fid in ref or st.name == "pyannote":
+        if fid in ref or st.count_files_without_ref:
             report.total = report.total + d
             report.scored_files.append(fid)
         if j is not None:
